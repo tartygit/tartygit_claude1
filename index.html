@@ -681,6 +681,25 @@
     .packet--bad { fill: var(--neon-magenta); filter: drop-shadow(0 0 4px var(--neon-magenta)); }
     .packet--ok { fill: var(--neon-green); filter: drop-shadow(0 0 4px var(--neon-green)); }
 
+    /* ---------- Meeting notice dialog (shown after 10 s on the page) ---------- */
+    .notice {
+      width: min(460px, calc(100vw - 2 * var(--space-4)));
+      padding: 0; margin: auto;
+      border: 3px solid var(--neon-magenta); border-radius: var(--radius-md);
+      background: var(--crt-bg); color: #fff;
+      box-shadow: 6px 6px 0 var(--neon-cyan), 0 0 28px rgba(255, 61, 242, .55);
+    }
+    .notice::backdrop { background: rgba(11, 8, 32, .7); }
+    .notice[open] { animation: drawer-in .28s var(--ease); }
+    .notice__head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-5); background: var(--neon-magenta); color: #fff; font-family: var(--font-mono); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    .notice__head span { animation: blink 1s steps(1, end) infinite; }
+    .notice__body { padding: var(--space-5); display: grid; gap: var(--space-3); }
+    .notice__title { font-family: var(--font-mono); font-size: 18px; color: var(--neon-cyan); text-shadow: 0 0 8px rgba(34, 227, 255, .7); }
+    .notice__list { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); font-size: 15px; }
+    .notice__list b { font-family: var(--font-mono); color: var(--neon-amber); text-transform: uppercase; letter-spacing: .06em; margin-right: var(--space-2); }
+    .notice__mandatory { padding: var(--space-2) var(--space-3); border: 1px dashed var(--neon-amber); color: var(--neon-amber); font-family: var(--font-mono); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .notice__foot { display: flex; justify-content: flex-end; padding: 0 var(--space-5) var(--space-5); }
+
     /* ---------- Responsive ---------- */
     @media (max-width: 1100px) {
       .stat { min-width: 0; }
@@ -705,6 +724,28 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms; animation-iteration-count: 1; transition-duration: .01ms; }
     }
+
+    /* ---------- IT assistant chatbot widget ---------- */
+    .bot { position: fixed; right: var(--space-5); bottom: var(--space-5); z-index: 40; display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); }
+    .bot__bubble {
+      max-width: 220px; padding: 8px 12px; border-radius: 14px 14px 4px 14px;
+      background: var(--c-surface); color: var(--c-ink-900); border: 1px solid var(--c-line);
+      font-size: 13px; box-shadow: 0 4px 14px rgba(15, 27, 45, 0.15);
+    }
+    .bot__bubble[hidden] { display: none; }
+    .bot__btn {
+      width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--c-surface);
+      background: var(--c-brand-500); cursor: pointer; padding: 0;
+      box-shadow: 0 6px 18px rgba(20, 64, 124, 0.4);
+      animation: bot-bob 3s ease-in-out infinite;
+    }
+    .bot__btn:hover { background: var(--c-brand-600); }
+    .bot__btn:focus-visible { outline: 3px solid var(--c-brand-200); outline-offset: 2px; }
+    .bot__btn.is-speaking { animation: bot-talk 0.5s ease-in-out infinite alternate; }
+    .bot__btn svg { width: 100%; height: 100%; display: block; }
+    @keyframes bot-bob { 50% { transform: translateY(-4px); } }
+    @keyframes bot-talk { to { transform: scale(1.08); } }
+    @media (prefers-reduced-motion: reduce) { .bot__btn, .bot__btn.is-speaking { animation: none; } }
   </style>
 </head>
 <body>
@@ -867,6 +908,23 @@
     Internal demo / training tool for a fictitious bank. Not an official system of any real organisation.
   </footer>
 
+  <!-- IT assistant chatbot widget (voice greeting comes from the hook in section 17) -->
+  <div class="bot">
+    <p class="bot__bubble" id="bot-bubble" hidden role="status">I am your IT assistant, how can I help you?</p>
+    <button type="button" class="bot__btn" id="bot-btn" aria-label="IT assistant chatbot — click to hear a greeting">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <line x1="32" y1="9" x2="32" y2="16" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="32" cy="8" r="3.5" fill="#ffd166"/>
+        <rect x="13" y="16" width="38" height="32" rx="14" fill="#fff"/>
+        <circle cx="24" cy="31" r="4.5" fill="#14407c"/><circle cx="40" cy="31" r="4.5" fill="#14407c"/>
+        <circle cx="25.5" cy="29.5" r="1.4" fill="#fff"/><circle cx="41.5" cy="29.5" r="1.4" fill="#fff"/>
+        <circle cx="18" cy="38" r="3" fill="#ffb3c1" opacity=".8"/><circle cx="46" cy="38" r="3" fill="#ffb3c1" opacity=".8"/>
+        <path d="M26 39 Q32 45 38 39" fill="none" stroke="#14407c" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="8" y="27" width="5" height="10" rx="2.5" fill="#c4d8f5"/><rect x="51" y="27" width="5" height="10" rx="2.5" fill="#c4d8f5"/>
+      </svg>
+    </button>
+  </div>
+
   <!-- =====================================================================
        ADD TASK DRAWER (native <dialog> — focus trapping & Esc handled by the browser)
        ===================================================================== -->
@@ -949,6 +1007,22 @@
     </form>
   </dialog>
 
+  <!-- MEETING NOTICE — opened by script after MEETING_NOTICE_DELAY_MS on the page -->
+  <dialog class="notice" id="meeting-dialog" aria-labelledby="meeting-title" aria-describedby="meeting-desc">
+    <div class="notice__head"><span aria-hidden="true">▲</span>Notice</div>
+    <div class="notice__body">
+      <h2 class="notice__title" id="meeting-title">IT Meeting — Next Wednesday</h2>
+      <ul class="notice__list" id="meeting-desc">
+        <li><b>When:</b>Next Wednesday, 10:00 AM</li>
+        <li><b>Where:</b>Orchard Room</li>
+      </ul>
+      <p class="notice__mandatory">Attendance is mandatory.</p>
+    </div>
+    <div class="notice__foot">
+      <button type="button" class="btn btn--primary" id="meeting-ack">Got it</button>
+    </div>
+  </dialog>
+
   <!-- Toast notifications (polite live region; moved into the dialog while it is open
        so toasts stay above the modal top layer and are not made inert) -->
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="false"></div>
@@ -974,6 +1048,7 @@
     const TASK_ID_PREFIX = "UOB-ITPM-";
     const EMAIL_SUBJECT_PREFIX = "[UOB IT PMO]";
     const NOTIFY_TIMEOUT_MS = 15000;
+    const MEETING_NOTICE_DELAY_MS = 10000; // show the meeting notice after this long on the page
 
     /* =====================================================================
        2. DOMAIN CONSTANTS — single source for columns and select options
@@ -1856,7 +1931,43 @@
       renderBoard();
     }
 
+    /* =====================================================================
+       17. IT ASSISTANT VOICE HOOK — mirrors .claude/hooks/it-assistant-voice.html
+       ===================================================================== */
+    const BOT_GREETING = "I am your IT assistant, how can I help you?";
+    function initAssistantHook() {
+      const btn = document.getElementById("bot-btn");
+      const bubble = document.getElementById("bot-bubble");
+      btn.addEventListener("click", () => {
+        bubble.hidden = false;
+        if (!("speechSynthesis" in window)) return;
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(BOT_GREETING);
+        u.lang = "en-US"; u.pitch = 1.3; u.rate = 1;
+        u.onstart = () => btn.classList.add("is-speaking");
+        u.onend = u.onerror = () => btn.classList.remove("is-speaking");
+        window.speechSynthesis.speak(u);
+      });
+    }
+    initAssistantHook();
+
+    /* =====================================================================
+       16. MEETING NOTICE — in-page dialog after 10 s (no native alert, no storage)
+       ===================================================================== */
+    function scheduleMeetingNotice() {
+      const dialog = document.getElementById("meeting-dialog");
+      const show = () => {
+        // Don't stack on top of the Add Task drawer; wait until it closes.
+        if (dom.taskDialog.open) { dom.taskDialog.addEventListener("close", () => setTimeout(show, 300), { once: true }); return; }
+        dialog.showModal();
+        document.getElementById("meeting-ack").focus();
+      };
+      document.getElementById("meeting-ack").addEventListener("click", () => dialog.close());
+      setTimeout(show, MEETING_NOTICE_DELAY_MS);
+    }
+
     init();
+    scheduleMeetingNotice();
   </script>
 </body>
 </html>
