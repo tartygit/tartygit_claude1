@@ -8,6 +8,8 @@ A single-file Kanban board for IT project management. It is a **demo/training to
 
 ## Features
 
+- Retro arcade-terminal theme with blinking status lights (respects reduced motion)
+- Four views: Board, Timeline (Gantt chart), Analytics (pie charts, KPIs, security posture) and Live Flow (animated SVG pipeline)
 - Four columns: Backlog, In Progress, Blocked, Done, each with a live count badge
 - Header summary: total, per-status and overdue counts
 - Drag and drop cards between columns, or use the keyboard-accessible "Move" menu

@@ -1,0 +1,41 @@
+name: Check and deploy
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Constraint check
+        run: |
+          node -e 'const h=require("fs").readFileSync("index.html","utf8");const js=h.match(/<script>([\s\S]*?)<\/script>/)[1];new Function(js);if(/localStorage|sessionStorage|indexedDB|document\.cookie/.test(js)||h.includes("!important")){console.error("constraint violated");process.exit(1)}console.log("ok")'
+      - name: Placeholder email intact
+        run: grep -q 'ajax/YOUR_EMAIL@example.com' index.html
+  deploy:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir _site && cp index.html _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

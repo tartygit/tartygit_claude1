@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Security hardening: no remote scripts/styles/images; the only outbound call allowed is FormSubmit. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https://formsubmit.co; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
   <meta name="description" content="IT PMO Kanban board — internal demo / training tool for a fictitious bank.">
   <title>IT PMO · Kanban Board</title>
 
@@ -64,9 +67,18 @@
       --space-8: 48px;
 
       /* Shape, depth, type */
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 14px;
+      --radius-sm: 3px;
+      --radius-md: 5px;
+      --radius-lg: 8px;
+
+      /* Retro "arcade terminal" accents */
+      --neon-cyan: #22e3ff;
+      --neon-magenta: #ff3df2;
+      --neon-amber: #ffb703;
+      --neon-green: #39ff88;
+      --crt-bg: #0b0820;
+      --crt-bg-2: #1b1046;
+      --pixel-shadow: 3px 3px 0 var(--c-brand-950);
       --radius-pill: 999px;
       --shadow-1: 0 1px 2px rgba(15, 27, 45, .06), 0 1px 1px rgba(15, 27, 45, .04);
       --shadow-2: 0 4px 12px rgba(15, 27, 45, .10), 0 1px 3px rgba(15, 27, 45, .06);
@@ -473,6 +485,202 @@
     /* ---------- Footer ---------- */
     .app-footer { padding: 0 var(--space-6) var(--space-6); font-size: 12px; color: var(--c-ink-500); }
 
+    /* =====================================================================
+       RETRO THEME LAYER — arcade-terminal header, pixel shadows, blinking
+       status lights. Later rules intentionally refine the base styles above.
+       ===================================================================== */
+    @keyframes blink      { 0%, 49% { opacity: 1; } 50%, 100% { opacity: .15; } }
+    @keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 61, 242, .0); } 50% { box-shadow: 0 0 14px 2px rgba(255, 61, 242, .75); } }
+    @keyframes ticker     { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    @keyframes march      { to { stroke-dashoffset: -24; } }
+    @keyframes grow-x     { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes seg-in     { from { stroke-width: 0; } to { stroke-width: 6; } }
+    @keyframes scan       { from { background-position: 0 0; } to { background-position: 0 6px; } }
+
+    .view[hidden] { display: none; }
+    .blink { animation: blink 1s steps(1, end) infinite; }
+
+    .app-header {
+      position: relative;
+      background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, .045) 0 1px, transparent 1px 3px),
+        radial-gradient(900px 260px at 90% -30%, rgba(255, 61, 242, .35), transparent 70%),
+        radial-gradient(700px 240px at 5% 130%, rgba(34, 227, 255, .22), transparent 70%),
+        linear-gradient(135deg, var(--crt-bg), var(--crt-bg-2));
+      border-bottom: 3px solid var(--neon-magenta);
+      box-shadow: 0 3px 0 var(--neon-cyan);
+      animation: scan 1.2s linear infinite;
+    }
+    .app-header__actions { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+    .wordmark__mark { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(34, 227, 255, .55); }
+    .wordmark__name {
+      font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .18em;
+      text-shadow: 2px 2px 0 var(--neon-magenta), 0 0 12px rgba(34, 227, 255, .8);
+    }
+    .wordmark__sub { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--neon-cyan); }
+    .live {
+      display: inline-flex; align-items: center; gap: var(--space-2);
+      font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: .12em;
+      color: var(--neon-green);
+      padding: var(--space-1) var(--space-3);
+      border: 1px solid var(--neon-green); border-radius: var(--radius-sm);
+      background: rgba(57, 255, 136, .08);
+    }
+    .live__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); animation: blink 1s steps(1, end) infinite; }
+    .btn--light { border: 2px solid var(--neon-cyan); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; box-shadow: 3px 3px 0 var(--neon-magenta); }
+    .btn--light:hover { background: var(--neon-cyan); color: var(--crt-bg); }
+
+    .stat { border-radius: var(--radius-sm); border-color: rgba(34, 227, 255, .35); background: rgba(11, 8, 32, .55); }
+    .stat__value { font-family: var(--font-mono); color: #fff; text-shadow: 0 0 8px rgba(34, 227, 255, .7); }
+    .stat__label { text-transform: uppercase; letter-spacing: .08em; font-size: 10.5px; color: var(--neon-cyan); }
+    .stat__dot { box-shadow: 0 0 8px currentColor; }
+    .stat--blocked .stat__dot, .stat--overdue .stat__dot { animation: blink 1s steps(1, end) infinite; }
+    .stat--overdue { animation: glow-pulse 2s ease-in-out infinite; }
+
+    .ticker {
+      overflow: hidden; margin-top: var(--space-4);
+      border-top: 1px dashed rgba(34, 227, 255, .45); border-bottom: 1px dashed rgba(34, 227, 255, .45);
+      padding: var(--space-1) 0;
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--neon-amber);
+    }
+    .ticker__track { display: inline-block; white-space: pre; animation: ticker 38s linear infinite; }
+
+    /* View tabs */
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: var(--space-2);
+      padding: var(--space-3) var(--space-6) 0;
+      background: var(--c-surface);
+      border-bottom: 3px solid var(--c-brand-950);
+    }
+    .tab {
+      display: inline-flex; align-items: center; gap: var(--space-2);
+      min-height: 40px; padding: 0 var(--space-5);
+      font-family: var(--font-mono); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--c-ink-700); background: var(--c-column);
+      border: 2px solid var(--c-brand-950); border-bottom: 0;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      transition: background-color .15s var(--ease), color .15s var(--ease);
+    }
+    .tab:hover { background: var(--c-brand-100); }
+    .tab[aria-selected="true"] { background: var(--crt-bg); color: var(--neon-cyan); text-shadow: 0 0 8px rgba(34, 227, 255, .8); box-shadow: inset 0 3px 0 var(--neon-magenta); }
+    .tab[aria-selected="true"] .tab__dot { background: var(--neon-green); box-shadow: 0 0 6px var(--neon-green); animation: blink 1s steps(1, end) infinite; }
+    .tab__dot { width: 7px; height: 7px; background: var(--c-ink-300); }
+
+    .toolbar { border-bottom: 2px solid var(--c-line); }
+    .filters__field label { font-family: var(--font-mono); letter-spacing: .08em; }
+    .demo-note { font-family: var(--font-mono); border-radius: var(--radius-sm); border: 1px dashed var(--c-brand-500); }
+
+    /* Retro cards & columns */
+    .column { border-radius: var(--radius-lg); background: var(--c-column); }
+    .column__title { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
+    .count-badge { font-family: var(--font-mono); border-radius: var(--radius-sm); background: var(--c-brand-950); color: var(--neon-cyan); box-shadow: none; }
+    .column[data-status="Blocked"] .count-badge { animation: blink 1.2s steps(1, end) infinite; color: var(--neon-magenta); }
+    .card { box-shadow: var(--pixel-shadow); border: 2px solid var(--c-brand-950); border-left-width: 6px; border-left-color: var(--prio); }
+    .card:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--c-brand-950); }
+    .card.is-dragging { transform: rotate(1deg); }
+    .card__id { color: var(--c-brand-600); font-weight: 700; }
+    .pill { font-family: var(--font-mono); text-transform: uppercase; border-radius: var(--radius-sm); }
+    .pill--critical::before { animation: blink 1s steps(1, end) infinite; }
+    .badge-overdue { border-radius: var(--radius-sm); font-family: var(--font-mono); text-transform: uppercase; background: var(--c-critical); color: #fff; animation: blink 1s steps(1, end) infinite; }
+
+    /* Panels shared by Timeline / Analytics / Flow */
+    .panel-view { display: grid; gap: var(--space-5); padding: var(--space-5) var(--space-6) var(--space-8); }
+    .panel {
+      background: var(--c-surface); border: 2px solid var(--c-brand-950); border-radius: var(--radius-md);
+      box-shadow: var(--pixel-shadow); padding: var(--space-5);
+      min-width: 0;
+    }
+    .panel__title {
+      display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap;
+      margin-bottom: var(--space-4);
+      font-family: var(--font-mono); font-size: 14px; letter-spacing: .1em; text-transform: uppercase; color: var(--c-brand-800);
+    }
+    .panel__title small { font-size: 11.5px; letter-spacing: .04em; text-transform: none; color: var(--c-ink-500); font-weight: 400; }
+    .empty-note { padding: var(--space-6); text-align: center; color: var(--c-ink-500); border: 1.5px dashed var(--c-ink-300); border-radius: var(--radius-md); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
+    .legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); list-style: none; margin: var(--space-4) 0 0; padding: 0; font-size: 12.5px; color: var(--c-ink-700); }
+    .legend li { display: inline-flex; align-items: center; gap: var(--space-2); }
+    .legend i { width: 12px; height: 12px; border: 1px solid var(--c-brand-950); background: var(--sw); }
+
+    /* Gantt */
+    .gantt-scroll { overflow-x: auto; }
+    .gantt { --label-w: 250px; position: relative; min-width: 760px; font-size: 13px; }
+    .gantt__head { height: 30px; border-bottom: 2px solid var(--c-brand-950); }
+    .gantt__row { display: grid; grid-template-columns: var(--label-w) 1fr; align-items: center; min-height: 40px; border-bottom: 1px solid var(--c-line); }
+    .gantt__row:nth-child(even) { background: var(--c-brand-50); }
+    .gantt__label { display: flex; flex-direction: column; padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2); min-width: 0; }
+    .gantt__label b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
+    .gantt__label span { font-family: var(--font-mono); font-size: 11px; color: var(--c-ink-500); }
+    .gantt__track { position: relative; height: 40px; }
+    .gantt__bar {
+      position: absolute; top: 9px; height: 22px; left: var(--l); width: var(--w);
+      display: flex; align-items: center; padding: 0 var(--space-2);
+      border: 2px solid var(--c-brand-950); border-radius: var(--radius-sm);
+      background: var(--sw); color: #fff; font-size: 11px; font-weight: 700; font-family: var(--font-mono);
+      box-shadow: 2px 2px 0 var(--c-brand-950);
+      overflow: hidden; white-space: nowrap;
+      transform-origin: left center;
+      animation: grow-x .7s var(--ease) backwards;
+    }
+    .gantt__bar--backlog  { --sw: var(--c-status-backlog); }
+    .gantt__bar--in-progress { --sw: var(--c-status-progress); }
+    .gantt__bar--blocked  { --sw: var(--c-status-blocked); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.22) 0 6px, transparent 6px 12px); }
+    .gantt__bar--done     { --sw: var(--c-status-done); }
+    .gantt__bar.is-overdue { outline: 2px solid var(--neon-magenta); outline-offset: 1px; animation: grow-x .7s var(--ease) backwards, blink 1s steps(1, end) .7s infinite; }
+    .gantt__overlay { position: absolute; inset: 0; pointer-events: none; }
+    .gantt__tick, .gantt__today {
+      position: absolute; top: 0; bottom: 0;
+      left: calc(var(--label-w) + (100% - var(--label-w)) * var(--p));
+    }
+    .gantt__tick { border-left: 1px dashed var(--c-line); }
+    .gantt__tick span { position: absolute; top: 6px; left: 4px; font-family: var(--font-mono); font-size: 10.5px; color: var(--c-ink-500); white-space: nowrap; }
+    .gantt__today { border-left: 2px solid var(--neon-magenta); animation: blink 1.4s steps(1, end) infinite; }
+    .gantt__today span { position: absolute; top: -2px; left: 4px; padding: 0 var(--space-1); background: var(--neon-magenta); color: #fff; font-family: var(--font-mono); font-size: 10px; font-weight: 700; }
+
+    /* Analytics */
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-4); }
+    .kpi { padding: var(--space-4); background: var(--crt-bg); color: #fff; border: 2px solid var(--c-brand-950); border-radius: var(--radius-md); box-shadow: var(--pixel-shadow); }
+    .kpi__value { font-family: var(--font-mono); font-size: 30px; font-weight: 700; color: var(--neon-cyan); text-shadow: 0 0 10px rgba(34, 227, 255, .7); line-height: 1.1; }
+    .kpi__label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--c-brand-200); }
+    .kpi--alert .kpi__value { color: var(--neon-magenta); text-shadow: 0 0 10px rgba(255, 61, 242, .8); animation: blink 1s steps(1, end) infinite; }
+    .donut-wrap { display: flex; align-items: center; gap: var(--space-5); flex-wrap: wrap; }
+    .donut { width: 190px; height: 190px; flex-shrink: 0; }
+    .donut__seg { animation: seg-in .9s var(--ease) backwards; }
+    .donut__num { font-family: var(--font-mono); font-size: 8px; font-weight: 700; fill: var(--c-brand-950); text-anchor: middle; }
+    .donut__cap { font-family: var(--font-mono); font-size: 2.6px; fill: var(--c-ink-500); text-anchor: middle; letter-spacing: .3px; text-transform: uppercase; }
+    .bars { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+    .bars li { display: grid; grid-template-columns: minmax(120px, 190px) 1fr 34px; align-items: center; gap: var(--space-3); font-size: 13px; }
+    .bars__track { display: flex; height: 18px; border: 2px solid var(--c-brand-950); background: var(--c-canvas); transform-origin: left; animation: grow-x .8s var(--ease) backwards; }
+    .bars__seg { background: var(--sw); height: 100%; }
+    .bars__n { font-family: var(--font-mono); font-weight: 700; text-align: right; }
+    .posture { display: grid; grid-template-columns: auto 1fr; gap: var(--space-5); align-items: center; }
+    .posture__badge {
+      font-family: var(--font-mono); font-weight: 700; letter-spacing: .14em; font-size: 15px;
+      padding: var(--space-3) var(--space-5); border: 2px solid var(--c-brand-950); border-radius: var(--radius-sm); box-shadow: var(--pixel-shadow);
+    }
+    .posture__badge--ok { background: var(--neon-green); color: var(--crt-bg); }
+    .posture__badge--alert { background: var(--neon-magenta); color: #fff; animation: blink 1s steps(1, end) infinite; }
+    .posture ul { margin: 0; padding-left: var(--space-5); color: var(--c-ink-700); font-size: 13.5px; }
+
+    /* Animated delivery flow */
+    .flow-svg { width: 100%; height: auto; display: block; background: var(--crt-bg); border: 2px solid var(--c-brand-950); border-radius: var(--radius-md); }
+    .flow__line { fill: none; stroke: var(--neon-cyan); stroke-width: 3; stroke-dasharray: 8 4; animation: march 1s linear infinite; }
+    .flow__line--bad { stroke: var(--neon-magenta); }
+    .flow__node rect { fill: var(--crt-bg-2); stroke-width: 3; }
+    .flow__node--backlog rect  { stroke: var(--c-status-backlog); }
+    .flow__node--progress rect { stroke: var(--c-status-progress); }
+    .flow__node--blocked rect  { stroke: var(--neon-magenta); }
+    .flow__node--done rect     { stroke: var(--neon-green); }
+    .flow__node--gate rect     { stroke: var(--neon-amber); stroke-dasharray: 6 4; fill: transparent; }
+    .flow__name { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fill: #fff; text-anchor: middle; letter-spacing: 1.5px; text-transform: uppercase; }
+    .flow__count { font-family: var(--font-mono); font-size: 28px; font-weight: 700; fill: var(--neon-cyan); text-anchor: middle; }
+    .flow__node--blocked .flow__count { fill: var(--neon-magenta); animation: blink 1s steps(1, end) infinite; }
+    .flow__node--done .flow__count { fill: var(--neon-green); }
+    .flow__cap { font-family: var(--font-mono); font-size: 11px; fill: var(--neon-amber); text-anchor: middle; letter-spacing: 1px; }
+    .packet { fill: var(--neon-amber); filter: drop-shadow(0 0 4px var(--neon-amber)); }
+    .packet--bad { fill: var(--neon-magenta); filter: drop-shadow(0 0 4px var(--neon-magenta)); }
+    .packet--ok { fill: var(--neon-green); filter: drop-shadow(0 0 4px var(--neon-green)); }
+
     /* ---------- Responsive ---------- */
     @media (max-width: 1100px) {
       .stat { min-width: 0; }
@@ -483,6 +691,12 @@
       .column { min-height: 0; }
       .filters, .filters__field { width: 100%; }
       .filters .control { width: 100%; }
+      .tabs, .panel-view { padding-left: var(--space-4); padding-right: var(--space-4); }
+      .tab { padding: 0 var(--space-3); font-size: 12px; }
+      .grid-2, .posture { grid-template-columns: 1fr; }
+      .gantt { --label-w: 170px; }
+      .bars li { grid-template-columns: 1fr 34px; }
+      .bars li > span:first-child { grid-column: 1 / -1; }
       .task-form__body { grid-template-columns: 1fr; padding: var(--space-4); }
       .task-form__head, .task-form__foot { padding-left: var(--space-4); padding-right: var(--space-4); }
       .app-footer { padding: 0 var(--space-4) var(--space-5); }
@@ -513,10 +727,13 @@
           <p class="wordmark__sub">Project Management Office · Delivery Board</p>
         </div>
       </div>
-      <button type="button" class="btn btn--light" id="open-task-dialog" aria-haspopup="dialog">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        Add Task
-      </button>
+      <div class="app-header__actions">
+        <span class="live"><span class="live__dot" aria-hidden="true"></span>LIVE DEMO</span>
+        <button type="button" class="btn btn--light" id="open-task-dialog" aria-haspopup="dialog">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Add Task
+        </button>
+      </div>
     </div>
 
     <ul class="summary" aria-label="Board summary">
@@ -527,9 +744,19 @@
       <li class="stat stat--done"><span class="stat__dot" aria-hidden="true"></span><div><div class="stat__value" data-stat="Done">0</div><div class="stat__label">Done</div></div></li>
       <li class="stat stat--overdue"><span class="stat__dot" aria-hidden="true"></span><div><div class="stat__value" data-stat="overdue">0</div><div class="stat__label">Overdue</div></div></li>
     </ul>
+
+    <div class="ticker" aria-hidden="true"><span class="ticker__track" id="ticker-track"></span></div>
   </header>
 
   <main>
+    <!-- VIEW TABS — Board / Timeline (Gantt) / Analytics (pie charts) / Flow (animated) -->
+    <div class="tabs" role="tablist" aria-label="Board views" id="view-tabs">
+      <button type="button" class="tab" role="tab" id="tab-board" data-view="board" aria-selected="true" aria-controls="board"><span class="tab__dot" aria-hidden="true"></span>Board</button>
+      <button type="button" class="tab" role="tab" id="tab-timeline" data-view="timeline" aria-selected="false" aria-controls="view-timeline" tabindex="-1"><span class="tab__dot" aria-hidden="true"></span>Timeline</button>
+      <button type="button" class="tab" role="tab" id="tab-analytics" data-view="analytics" aria-selected="false" aria-controls="view-analytics" tabindex="-1"><span class="tab__dot" aria-hidden="true"></span>Analytics</button>
+      <button type="button" class="tab" role="tab" id="tab-flow" data-view="flow" aria-selected="false" aria-controls="view-flow" tabindex="-1"><span class="tab__dot" aria-hidden="true"></span>Live Flow</button>
+    </div>
+
     <!-- =================================================================
          TOOLBAR — client-side filters + in-memory demo note
          ================================================================= -->
@@ -564,7 +791,76 @@
     <!-- =================================================================
          KANBAN BOARD — columns are generated from STATUSES in the script
          ================================================================= -->
-    <section class="board" id="board" aria-label="Kanban board"></section>
+    <section class="board view" id="board" role="tabpanel" aria-labelledby="tab-board"></section>
+
+    <!-- TIMELINE — Gantt chart built from task start/due dates -->
+    <section class="panel-view view" id="view-timeline" role="tabpanel" aria-labelledby="tab-timeline" hidden>
+      <div class="panel">
+        <h2 class="panel__title">Delivery timeline <small>Gantt · bars run from start to due date · blinking outline = overdue</small></h2>
+        <div class="gantt-scroll"><div class="gantt" id="gantt"></div></div>
+        <ul class="legend" aria-label="Gantt legend">
+          <li style="--sw: var(--c-status-backlog)"><i></i>Backlog</li>
+          <li style="--sw: var(--c-status-progress)"><i></i>In Progress</li>
+          <li style="--sw: var(--c-status-blocked)"><i></i>Blocked (striped)</li>
+          <li style="--sw: var(--c-status-done)"><i></i>Done</li>
+          <li style="--sw: var(--neon-magenta)"><i></i>Today marker</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ANALYTICS — KPIs, pie (donut) charts, project load bars, security posture -->
+    <section class="panel-view view" id="view-analytics" role="tabpanel" aria-labelledby="tab-analytics" hidden>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid-2">
+        <div class="panel"><h2 class="panel__title">Tasks by status <small>pie chart</small></h2><div id="chart-status"></div></div>
+        <div class="panel"><h2 class="panel__title">Tasks by priority <small>pie chart</small></h2><div id="chart-priority"></div></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><h2 class="panel__title">Workload by project <small>stacked by status</small></h2><div id="chart-projects"></div></div>
+        <div class="panel"><h2 class="panel__title">Security posture <small>Cybersecurity category</small></h2><div id="chart-security"></div></div>
+      </div>
+    </section>
+
+    <!-- LIVE FLOW — animated delivery pipeline (SVG; replaces GIFs, no image files needed) -->
+    <section class="panel-view view" id="view-flow" role="tabpanel" aria-labelledby="tab-flow" hidden>
+      <div class="panel">
+        <h2 class="panel__title">Live delivery flow <small>animated · counts update from the board</small></h2>
+        <svg class="flow-svg" id="flow-svg" viewBox="0 0 900 340" role="img" aria-label="Delivery pipeline: Backlog flows to In Progress, then through sign-off to Done. Work can move from In Progress to Blocked and back.">
+          <defs>
+            <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#22e3ff"/></marker>
+            <marker id="arrow-pink" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ff3df2"/></marker>
+          </defs>
+          <path id="fp1" class="flow__line" d="M190 110 L296 110" marker-end="url(#arrow-cyan)"/>
+          <path id="fp2" class="flow__line" d="M460 110 L706 110" marker-end="url(#arrow-cyan)"/>
+          <path id="fp3" class="flow__line flow__line--bad" d="M350 150 L350 216" marker-end="url(#arrow-pink)"/>
+          <path id="fp4" class="flow__line flow__line--bad" d="M410 220 L410 154" marker-end="url(#arrow-pink)"/>
+
+          <g class="flow__node flow__node--backlog"><rect x="30" y="70" width="160" height="80" rx="4"/><text class="flow__name" x="110" y="98">Backlog</text><text class="flow__count" x="110" y="133" data-flow="Backlog">0</text></g>
+          <g class="flow__node flow__node--progress"><rect x="300" y="70" width="160" height="80" rx="4"/><text class="flow__name" x="380" y="98">In Progress</text><text class="flow__count" x="380" y="133" data-flow="In Progress">0</text></g>
+          <g class="flow__node flow__node--gate"><rect x="505" y="85" width="130" height="50" rx="4"/><text class="flow__cap" x="570" y="107">CAB · UAT</text><text class="flow__cap" x="570" y="123">SIGN-OFF</text></g>
+          <g class="flow__node flow__node--done"><rect x="710" y="70" width="160" height="80" rx="4"/><text class="flow__name" x="790" y="98">Done</text><text class="flow__count" x="790" y="133" data-flow="Done">0</text></g>
+          <g class="flow__node flow__node--blocked"><rect x="300" y="220" width="160" height="80" rx="4"/><text class="flow__name" x="380" y="248">Blocked</text><text class="flow__count" x="380" y="283" data-flow="Blocked">0</text></g>
+
+          <text class="flow__cap" x="243" y="98">INTAKE</text>
+          <text class="flow__cap" x="470" y="190" style="text-anchor:start">ESCALATE ⇄ RESOLVE</text>
+
+          <!-- travelling work items -->
+          <circle class="packet" r="6"><animateMotion dur="2.4s" repeatCount="indefinite" begin="0s"><mpath href="#fp1"/></animateMotion></circle>
+          <circle class="packet" r="6"><animateMotion dur="2.4s" repeatCount="indefinite" begin="0.8s"><mpath href="#fp1"/></animateMotion></circle>
+          <circle class="packet" r="6"><animateMotion dur="2.4s" repeatCount="indefinite" begin="1.6s"><mpath href="#fp1"/></animateMotion></circle>
+          <circle class="packet" r="6"><animateMotion dur="4s" repeatCount="indefinite" begin="0s"><mpath href="#fp2"/></animateMotion></circle>
+          <circle class="packet" r="6"><animateMotion dur="4s" repeatCount="indefinite" begin="1.3s"><mpath href="#fp2"/></animateMotion></circle>
+          <circle class="packet packet--ok" r="6"><animateMotion dur="4s" repeatCount="indefinite" begin="2.6s"><mpath href="#fp2"/></animateMotion></circle>
+          <circle class="packet packet--bad" r="6"><animateMotion dur="2s" repeatCount="indefinite" begin="0s"><mpath href="#fp3"/></animateMotion></circle>
+          <circle class="packet packet--bad" r="6"><animateMotion dur="2s" repeatCount="indefinite" begin="1s"><mpath href="#fp4"/></animateMotion></circle>
+        </svg>
+        <ul class="legend" aria-label="Flow legend">
+          <li style="--sw: var(--neon-amber)"><i></i>Work item in flight</li>
+          <li style="--sw: var(--neon-green)"><i></i>Item reaching sign-off</li>
+          <li style="--sw: var(--neon-magenta)"><i></i>Escalation to / from Blocked</li>
+        </ul>
+      </div>
+    </section>
   </main>
 
   <footer class="app-footer">
@@ -724,6 +1020,7 @@
         moveMenuId: null,       // card whose "Move ▸" menu is open
         confirmDeleteId: null,  // card showing the inline "Delete? Yes / No"
         draggingId: null,       // card currently being dragged
+        view: "board",          // active tab: board | timeline | analytics | flow
         submitting: false,      // FormSubmit request in flight
         formAttempted: false,   // show live validation after first submit
       },
@@ -791,6 +1088,16 @@
         || a.dueDate.localeCompare(b.dueDate)
         || a.id.localeCompare(b.id);
     }
+    /** Whole days since the Unix epoch for a YYYY-MM-DD string (timezone-safe). */
+    function dayNum(iso) {
+      const [y, m, d] = iso.split("-").map(Number);
+      return Math.round(Date.UTC(y, m - 1, d) / 86400000);
+    }
+    function dayLabel(n) {
+      return new Date(n * 86400000).toLocaleDateString("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" });
+    }
+    const STATUS_COLOR = { Backlog: "var(--c-status-backlog)", "In Progress": "var(--c-status-progress)", Blocked: "var(--c-status-blocked)", Done: "var(--c-status-done)" };
+    const PRIORITY_COLOR = { Critical: "var(--c-critical)", High: "var(--c-high)", Medium: "var(--c-medium)", Low: "var(--c-low)" };
     function findTask(id) { return state.tasks.find((t) => t.id === id); }
     function attr(value) { return CSS.escape(value); }
 
@@ -809,9 +1116,11 @@
         { title: "Technology risk self-assessment evidence pack", description: "Compile control evidence for the annual technology risk self-assessment.", project: "Cybersecurity Uplift", category: "Compliance", assignee: "Nur Hidayah", priority: "Medium", due: -6, status: "Done" },
         { title: "Rotate privileged credentials for core ledger DB", description: "Quarterly rotation of break-glass and service accounts via the PAM vault.", project: "Core Banking Upgrade", category: "Cybersecurity", assignee: "Wei Jie Ong", priority: "Low", due: -1, status: "Done" },
       ];
-      return seed.map(({ due, ...rest }) => ({
+      const startOffsets = [-10, -12, -8, 10, -14, 5, -30, -9]; // parallel to `seed`
+      return seed.map(({ due, ...rest }, i) => ({
         id: nextTaskId(),
         ...rest,
+        startDate: offsetISO(startOffsets[i]),
         dueDate: offsetISO(due),
         createdAt: new Date().toISOString(),
       }));
@@ -831,6 +1140,7 @@
         category: input.category,
         assignee: input.assignee,
         priority: input.priority,
+        startDate: todayISO(),
         dueDate: input.dueDate,
         status: input.status,
         createdAt: new Date().toISOString(),
@@ -921,6 +1231,146 @@
       }
 
       renderSummary(visible.length, filtering);
+      renderActiveView(visible);
+    }
+
+    /* ---- Extra views: only the visible tab is rendered ---- */
+    function renderActiveView(visible) {
+      switch (state.ui.view) {
+        case "timeline":  renderGantt(visible); break;
+        case "analytics": renderAnalytics(visible); break;
+        case "flow":      renderFlow(visible); break;
+      }
+    }
+
+    function setView(name) {
+      if (!["board", "timeline", "analytics", "flow"].includes(name)) return;
+      state.ui.view = name;
+      dom.tabs.querySelectorAll(".tab").forEach((tab) => {
+        const on = tab.dataset.view === name;
+        tab.setAttribute("aria-selected", String(on));
+        tab.tabIndex = on ? 0 : -1;
+      });
+      dom.views.forEach((v) => { v.hidden = v.dataset.view !== name; });
+      renderBoard();
+    }
+
+    function handleTabKeydown(event) {
+      const keys = { ArrowRight: 1, ArrowLeft: -1 };
+      if (!(event.key in keys)) return;
+      const tabs = [...dom.tabs.querySelectorAll(".tab")];
+      const next = tabs[(tabs.indexOf(document.activeElement) + keys[event.key] + tabs.length) % tabs.length];
+      setView(next.dataset.view);
+      next.focus();
+    }
+
+    /** Gantt chart: one row per visible task, bars from startDate to dueDate. */
+    function renderGantt(tasks) {
+      if (!tasks.length) { dom.gantt.innerHTML = `<p class="empty-note">No tasks match the current filters.</p>`; return; }
+      const today = dayNum(todayISO());
+      const rows = tasks.slice().sort((a, b) => a.startDate.localeCompare(b.startDate) || compareTasks(a, b));
+      const min = Math.min(today, ...rows.map((t) => dayNum(t.startDate))) - 2;
+      const max = Math.max(today, ...rows.map((t) => dayNum(t.dueDate))) + 3;
+      const span = max - min;
+      const frac = (n) => ((n - min) / span).toFixed(5);
+
+      let ticks = "";
+      for (let n = min; n <= max; n += 7) ticks += `<div class="gantt__tick" style="--p:${frac(n)}"><span>${dayLabel(n)}</span></div>`;
+
+      const body = rows.map((t) => {
+        const s = dayNum(t.startDate), e = Math.max(dayNum(t.dueDate) + 1, s + 1);
+        const left = (frac(s) * 100).toFixed(3), width = (((e - s) / span) * 100).toFixed(3);
+        const label = `${t.id} ${t.title}, ${t.status}, ${formatDate(t.startDate)} to ${formatDate(t.dueDate)}${isOverdue(t) ? ", overdue" : ""}`;
+        return `
+          <div class="gantt__row">
+            <div class="gantt__label" title="${escapeHtml(t.title)}"><b>${escapeHtml(t.title)}</b><span>${escapeHtml(t.id)} · ${escapeHtml(t.assignee)}</span></div>
+            <div class="gantt__track">
+              <div class="gantt__bar gantt__bar--${slugify(t.status)}${isOverdue(t) ? " is-overdue" : ""}" style="--l:${left}%;--w:${width}%" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${escapeHtml(t.status)}</div>
+            </div>
+          </div>`;
+      }).join("");
+
+      dom.gantt.innerHTML = `
+        <div class="gantt__head"></div>${body}
+        <div class="gantt__overlay" aria-hidden="true">${ticks}<div class="gantt__today" style="--p:${frac(today)}"><span>TODAY</span></div></div>`;
+    }
+
+    /** SVG pie (donut) chart. segs: [{ label, value, color }] */
+    function donutSvg(segs, caption) {
+      const total = segs.reduce((n, s) => n + s.value, 0);
+      if (!total) return `<p class="empty-note">No data</p>`;
+      let acc = 0;
+      const arcs = segs.filter((s) => s.value > 0).map((s) => {
+        const p = (s.value / total) * 100;
+        const arc = `<circle class="donut__seg" cx="21" cy="21" r="15.9155" fill="none" stroke="${s.color}" stroke-width="6" stroke-dasharray="${p.toFixed(3)} ${(100 - p).toFixed(3)}" stroke-dashoffset="${(25 - acc).toFixed(3)}"><title>${escapeHtml(s.label)}: ${s.value}</title></circle>`;
+        acc += p;
+        return arc;
+      }).join("");
+      const legend = segs.map((s) => `<li style="--sw:${s.color}"><i></i>${escapeHtml(s.label)} — <b>${s.value}</b> (${Math.round((s.value / total) * 100)}%)</li>`).join("");
+      return `
+        <div class="donut-wrap">
+          <svg class="donut" viewBox="0 0 42 42" role="img" aria-label="${escapeHtml(caption)}: ${segs.map((s) => `${s.label} ${s.value}`).join(", ")}">
+            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#e9eef5" stroke-width="6"/>
+            ${arcs}
+            <text class="donut__num" x="21" y="23.5">${total}</text>
+            <text class="donut__cap" x="21" y="28">tasks</text>
+          </svg>
+          <ul class="legend" style="flex-direction:column;margin:0">${legend}</ul>
+        </div>`;
+    }
+
+    function renderAnalytics(tasks) {
+      const n = tasks.length;
+      const done = tasks.filter((t) => t.status === "Done").length;
+      const blocked = tasks.filter((t) => t.status === "Blocked").length;
+      const overdue = tasks.filter(isOverdue).length;
+      const critOpen = tasks.filter((t) => t.priority === "Critical" && t.status !== "Done").length;
+      const kpi = (value, label, alert) => `<div class="kpi${alert ? " kpi--alert" : ""}"><div class="kpi__value">${value}</div><div class="kpi__label">${label}</div></div>`;
+      dom.kpis.innerHTML =
+        kpi(n ? Math.round((done / n) * 100) + "%" : "–", "Complete", false) +
+        kpi(n - done, "Open items", false) +
+        kpi(blocked, "Blocked", blocked > 0) +
+        kpi(overdue, "Overdue", overdue > 0) +
+        kpi(critOpen, "Critical open", critOpen > 0);
+
+      document.getElementById("chart-status").innerHTML = donutSvg(
+        STATUS_KEYS.map((k) => ({ label: k, value: tasks.filter((t) => t.status === k).length, color: STATUS_COLOR[k] })), "Tasks by status");
+      document.getElementById("chart-priority").innerHTML = donutSvg(
+        PRIORITIES.map((p) => ({ label: p, value: tasks.filter((t) => t.priority === p).length, color: PRIORITY_COLOR[p] })), "Tasks by priority");
+
+      const rows = PROJECTS.map((p) => {
+        const mine = tasks.filter((t) => t.project === p);
+        const segs = STATUS_KEYS.map((k) => {
+          const c = mine.filter((t) => t.status === k).length;
+          return c ? `<span class="bars__seg" style="--sw:${STATUS_COLOR[k]};width:${(c / Math.max(...PROJECTS.map((q) => tasks.filter((t) => t.project === q).length), 1)) * 100}%" title="${escapeHtml(k)}: ${c}"></span>` : "";
+        }).join("");
+        return `<li><span>${escapeHtml(p)}</span><div class="bars__track" role="img" aria-label="${escapeHtml(p)}: ${mine.length} tasks">${segs}</div><span class="bars__n">${mine.length}</span></li>`;
+      }).join("");
+      document.getElementById("chart-projects").innerHTML =
+        `<ul class="bars">${rows}</ul><ul class="legend">${STATUS_KEYS.map((k) => `<li style="--sw:${STATUS_COLOR[k]}"><i></i>${escapeHtml(k)}</li>`).join("")}</ul>`;
+
+      const sec = tasks.filter((t) => t.category === "Cybersecurity");
+      const secOpen = sec.filter((t) => t.status !== "Done");
+      const secOverdue = sec.filter(isOverdue).length;
+      const secCrit = secOpen.filter((t) => t.priority === "Critical").length;
+      const alert = secOverdue > 0 || secCrit > 0;
+      document.getElementById("chart-security").innerHTML = `
+        <div class="posture">
+          <div class="posture__badge posture__badge--${alert ? "alert" : "ok"}">${alert ? "ELEVATED" : "NOMINAL"}</div>
+          <ul>
+            <li><b>${sec.length}</b> cybersecurity tasks, <b>${secOpen.length}</b> still open</li>
+            <li><b>${secOverdue}</b> overdue security item${secOverdue === 1 ? "" : "s"}</li>
+            <li><b>${secCrit}</b> critical-priority item${secCrit === 1 ? "" : "s"} unresolved</li>
+            <li>Rule: ELEVATED when any security task is overdue or critical and open.</li>
+          </ul>
+        </div>`;
+    }
+
+    /** Update the live counts inside the animated flow diagram. */
+    function renderFlow(tasks) {
+      dom.flowSvg.querySelectorAll("[data-flow]").forEach((el) => {
+        el.textContent = String(tasks.filter((t) => t.status === el.dataset.flow).length);
+      });
     }
 
     function renderEmptyColumn(hiddenByFilter) {
@@ -999,6 +1449,9 @@
         el.textContent = String(counts[el.dataset.stat] ?? 0);
       });
       dom.filterResult.textContent = filtering ? `Showing ${visibleCount} of ${state.tasks.length} tasks` : "";
+
+      const line = `▶ SYSTEM ONLINE   ■ ${counts.total} TASKS   ■ ${counts["In Progress"]} IN FLIGHT   ■ ${counts.Blocked} BLOCKED   ■ ${counts.overdue} OVERDUE   ■ DEMO DATA · NOT PERSISTED   `;
+      dom.tickerTrack.textContent = line + line;
     }
 
     /** Move focus to an element after a re-render (keyboard continuity). */
@@ -1341,6 +1794,10 @@
       dom.board.addEventListener("dragend", endDrag);
       document.addEventListener("click", handleDocumentClick);
 
+      // View tabs
+      dom.tabs.addEventListener("click", (e) => { const t = e.target.closest(".tab"); if (t) setView(t.dataset.view); });
+      dom.tabs.addEventListener("keydown", handleTabKeydown);
+
       // Filters
       dom.filterForm.addEventListener("input", handleFilterInput);
       dom.filterForm.addEventListener("reset", handleFilterReset);
@@ -1373,7 +1830,18 @@
         taskForm: document.getElementById("task-form"),
         submitBtn: document.getElementById("task-submit"),
         toastRegion: document.getElementById("toast-region"),
+        tabs: document.getElementById("view-tabs"),
+        gantt: document.getElementById("gantt"),
+        kpis: document.getElementById("kpis"),
+        flowSvg: document.getElementById("flow-svg"),
+        tickerTrack: document.getElementById("ticker-track"),
+        views: [document.getElementById("board"), document.getElementById("view-timeline"),
+                document.getElementById("view-analytics"), document.getElementById("view-flow")],
       });
+      ["board", "timeline", "analytics", "flow"].forEach((name, i) => { dom.views[i].dataset.view = name; });
+
+      // SMIL packets ignore CSS media queries — freeze them for reduced-motion users.
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) dom.flowSvg.pauseAnimations();
 
       fillSelect(dom.filterForm.elements.project, PROJECTS);
       fillSelect(dom.filterForm.elements.priority, PRIORITIES);
